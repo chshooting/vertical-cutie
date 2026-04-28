@@ -127,12 +127,25 @@ export const videoService = {
   },
   /**
    * Mock render. Replace this with a real backend call.
+   *
+   * IMPORTANT: the chosen `settings.displayMode` MUST be honored by the
+   * renderer so that exports match the editor preview.
+   *
+   *  - "fit":    ffmpeg -vf "scale=1080:-2,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black"
+   *  - "fill":   ffmpeg -vf "scale=-2:1920,crop=1080:1920:<x>:0"   (x from framing)
+   *              with extra scale multiplier for `zoom`
+   *  - "blur":   two layers — blurred enlarged background + scaled foreground
+   *              (overlay + boxblur filter)
+   *  - "manual": apply `zoom` + `offsetY` as crop offsets in a 1080x1920 canvas
+   *
    * Example (Shotstack):
    *   await fetch('/api/render', { method: 'POST',
    *     body: JSON.stringify(buildShotstackJson(project)) })
    */
   async exportProject(project: VideoProject): Promise<ExportRecord> {
     await new Promise((r) => setTimeout(r, 1200));
+    // Snapshot the display mode into the record so history reflects how
+    // the export was produced, and so a future backend job can re-render.
     const record: ExportRecord = {
       id: crypto.randomUUID(),
       projectId: project.id,
