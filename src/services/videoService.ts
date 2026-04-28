@@ -34,8 +34,9 @@ export type DisplayMode = "fit" | "fill" | "blur" | "manual";
 export interface EditorSettings {
   displayMode: DisplayMode;
   framing: FramingMode;
-  zoom: number; // 1 - 3 (used in fill/manual/blur)
-  offsetY: number; // -50..50 (manual only)
+  zoom: number; // 1 - 3 (extra zoom applied on top of the selected fit mode)
+  offsetX: number; // -50..50 (horizontal crop/position adjustment)
+  offsetY: number; // -50..50 (vertical crop/position adjustment)
   blurredBackground: boolean; // legacy; kept for back-compat, derived from displayMode
   titleText: string;
   subtitleText: string;
@@ -70,6 +71,7 @@ export const defaultSettings = (): EditorSettings => ({
   displayMode: "blur",
   framing: "center",
   zoom: 1,
+  offsetX: 0,
   offsetY: 0,
   blurredBackground: true,
   titleText: "Titular aquí",
@@ -136,7 +138,7 @@ export const videoService = {
    *              with extra scale multiplier for `zoom`
    *  - "blur":   two layers — blurred enlarged background + scaled foreground
    *              (overlay + boxblur filter)
-   *  - "manual": apply `zoom` + `offsetY` as crop offsets in a 1080x1920 canvas
+   *  - "manual": apply `zoom` + `offsetX`/`offsetY` as crop offsets in a 1080x1920 canvas
    *
    * Example (Shotstack):
    *   await fetch('/api/render', { method: 'POST',
