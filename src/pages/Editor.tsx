@@ -7,14 +7,17 @@ import {
   Download,
   ArrowLeft,
   Sparkles,
+  Maximize2,
+  Minimize2,
+  Move,
 } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
 import {
+  DisplayMode,
   EditorSettings,
   FramingMode,
   VideoProject,
@@ -26,6 +29,18 @@ const framingOptions: { value: FramingMode; label: string; icon: typeof AlignLef
   { value: "left", label: "Izquierda", icon: AlignLeft },
   { value: "center", label: "Centro", icon: AlignCenter },
   { value: "right", label: "Derecha", icon: AlignRight },
+];
+
+const displayModeOptions: {
+  value: DisplayMode;
+  label: string;
+  hint: string;
+  icon: typeof AlignLeft;
+}[] = [
+  { value: "fit", label: "Ajustar vídeo completo", hint: "Muestra todo el vídeo (letterbox)", icon: Minimize2 },
+  { value: "fill", label: "Completar pantalla", hint: "Rellena el 9:16 recortando los lados", icon: Maximize2 },
+  { value: "blur", label: "Fondo desenfocado", hint: "Vídeo completo + fondo blur", icon: Sparkles },
+  { value: "manual", label: "Zoom manual", hint: "Escala y posición libres", icon: Move },
 ];
 
 const Editor = () => {
