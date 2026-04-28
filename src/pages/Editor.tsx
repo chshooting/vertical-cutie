@@ -212,54 +212,72 @@ const Editor = () => {
 
             <section className="space-y-3 rounded-xl border border-border/60 bg-gradient-card p-4">
               <h3 className="text-sm font-semibold">Encuadre</h3>
-              <div className="grid grid-cols-3 gap-2">
-                {framingOptions.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => update({ framing: opt.value })}
-                    className={`flex flex-col items-center gap-1 rounded-lg border px-2 py-3 text-xs transition-smooth ${
-                      settings.framing === opt.value
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border text-muted-foreground hover:border-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    <opt.icon className="h-4 w-4" />
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
 
-              <div className="space-y-2 pt-2">
-                <div className="flex items-center justify-between">
-                  <Label>Zoom</Label>
-                  <span className="text-xs text-muted-foreground">
-                    {settings.zoom.toFixed(2)}×
-                  </span>
+              {/* Framing: used for fill + blur modes to choose which part to keep */}
+              {(settings.displayMode === "fill" || settings.displayMode === "blur") && (
+                <div className="grid grid-cols-3 gap-2">
+                  {framingOptions.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => update({ framing: opt.value })}
+                      className={`flex flex-col items-center gap-1 rounded-lg border px-2 py-3 text-xs transition-smooth ${
+                        settings.framing === opt.value
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:border-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <opt.icon className="h-4 w-4" />
+                      {opt.label}
+                    </button>
+                  ))}
                 </div>
-                <Slider
-                  value={[settings.zoom]}
-                  min={1}
-                  max={2}
-                  step={0.05}
-                  onValueChange={([v]) => update({ zoom: v })}
-                />
-              </div>
+              )}
 
-              <div className="flex items-center justify-between pt-1">
-                <div>
-                  <Label className="flex items-center gap-2">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Fondo desenfocado
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Rellena los bordes con blur estilo Reels.
-                  </p>
+              {/* Zoom: only in fill + manual */}
+              {(settings.displayMode === "fill" || settings.displayMode === "manual") && (
+                <div className="space-y-2 pt-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Zoom</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {settings.zoom.toFixed(2)}×
+                    </span>
+                  </div>
+                  <Slider
+                    value={[settings.zoom]}
+                    min={1}
+                    max={3}
+                    step={0.05}
+                    onValueChange={([v]) => update({ zoom: v })}
+                  />
                 </div>
-                <Switch
-                  checked={settings.blurredBackground}
-                  onCheckedChange={(v) => update({ blurredBackground: v })}
-                />
-              </div>
+              )}
+
+              {/* Manual offset Y */}
+              {settings.displayMode === "manual" && (
+                <div className="space-y-2 pt-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Posición vertical</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {settings.offsetY > 0 ? "+" : ""}
+                      {settings.offsetY}%
+                    </span>
+                  </div>
+                  <Slider
+                    value={[settings.offsetY]}
+                    min={-50}
+                    max={50}
+                    step={1}
+                    onValueChange={([v]) => update({ offsetY: v })}
+                  />
+                </div>
+              )}
+
+              {settings.displayMode === "fit" && (
+                <p className="text-xs text-muted-foreground">
+                  El vídeo se muestra completo dentro del formato 9:16. Los
+                  controles de zoom y encuadre se activan en los otros modos.
+                </p>
+              )}
             </section>
 
             <section className="space-y-3 rounded-xl border border-border/60 bg-gradient-card p-4">
