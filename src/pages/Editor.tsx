@@ -110,11 +110,40 @@ const Editor = () => {
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
-          {/* Preview */}
-          <div className="flex items-start justify-center rounded-2xl border border-border/60 bg-gradient-card p-6">
+          {/* Preview column */}
+          <div className="flex flex-col items-center gap-4 rounded-2xl border border-border/60 bg-gradient-card p-6">
+            {/* Display mode selector (above preview) */}
+            <div className="w-full max-w-sm">
+              <Label className="mb-2 block text-xs uppercase tracking-wide text-muted-foreground">
+                Modo de visualización
+              </Label>
+              <div className="grid grid-cols-2 gap-2">
+                {displayModeOptions.map((opt) => {
+                  const active = settings.displayMode === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      onClick={() => update({ displayMode: opt.value })}
+                      className={`flex flex-col items-start gap-1 rounded-lg border px-3 py-2 text-left text-xs transition-smooth ${
+                        active
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:border-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5 font-semibold">
+                        <opt.icon className="h-3.5 w-3.5" />
+                        {opt.label}
+                      </span>
+                      <span className="text-[10px] leading-tight opacity-80">{opt.hint}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="relative aspect-[9/16] w-full max-w-sm overflow-hidden rounded-2xl bg-black shadow-elegant">
-              {/* Blurred background layer */}
-              {settings.blurredBackground && (
+              {/* Blurred background layer: only for "blur" mode */}
+              {settings.displayMode === "blur" && (
                 <video
                   src={project.sourceSrc}
                   autoPlay
@@ -124,7 +153,7 @@ const Editor = () => {
                   className="absolute inset-0 h-full w-full scale-[1.8] object-cover blur-2xl opacity-70"
                 />
               )}
-              {/* Main framed video */}
+              {/* Main framed video — behavior depends on displayMode */}
               <video
                 src={project.sourceSrc}
                 autoPlay
@@ -132,11 +161,17 @@ const Editor = () => {
                 muted
                 playsInline
                 style={{
-                  objectPosition,
-                  transform: `scale(${settings.zoom})`,
+                  objectPosition:
+                    settings.displayMode === "manual"
+                      ? `50% ${50 + settings.offsetY}%`
+                      : objectPosition,
+                  transform:
+                    settings.displayMode === "manual" || settings.displayMode === "fill"
+                      ? `scale(${settings.zoom})`
+                      : "none",
                 }}
                 className={`absolute inset-0 h-full w-full transition-smooth ${
-                  settings.blurredBackground ? "object-contain" : "object-cover"
+                  settings.displayMode === "fill" ? "object-cover" : "object-contain"
                 }`}
               />
               {/* Title overlay */}
