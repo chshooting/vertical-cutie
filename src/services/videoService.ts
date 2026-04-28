@@ -67,8 +67,10 @@ const PROJECTS_KEY = "vc_projects";
 const EXPORTS_KEY = "vc_exports";
 
 export const defaultSettings = (): EditorSettings => ({
+  displayMode: "blur",
   framing: "center",
   zoom: 1,
+  offsetY: 0,
   blurredBackground: true,
   titleText: "Titular aquí",
   subtitleText: "Subtítulo inferior",
