@@ -19,10 +19,24 @@
 
 export type FramingMode = "left" | "center" | "right";
 
+/**
+ * Display mode for fitting the 16:9 source into the 9:16 canvas.
+ * - "fit": full video visible, letterboxed (contain)
+ * - "fill": cover, crops sides based on framing
+ * - "blur": full video in front + blurred enlarged copy behind
+ * - "manual": user-controlled zoom + offsets
+ *
+ * The backend renderer (FFmpeg / Shotstack / Cloudinary) must honor
+ * this field when producing the 1080x1920 export.
+ */
+export type DisplayMode = "fit" | "fill" | "blur" | "manual";
+
 export interface EditorSettings {
+  displayMode: DisplayMode;
   framing: FramingMode;
-  zoom: number; // 1 - 2
-  blurredBackground: boolean;
+  zoom: number; // 1 - 3 (used in fill/manual/blur)
+  offsetY: number; // -50..50 (manual only)
+  blurredBackground: boolean; // legacy; kept for back-compat, derived from displayMode
   titleText: string;
   subtitleText: string;
   textColor: string;
