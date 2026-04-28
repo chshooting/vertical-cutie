@@ -1,0 +1,135 @@
+/**
+ * Video service layer.
+ *
+ * This file is an abstraction boundary. Today it returns mocked data stored in
+ * localStorage. Tomorrow you can swap the implementation with calls to a real
+ * backend (Cloudinary, Shotstack, or a custom FFmpeg service) without
+ * touching the UI.
+ *
+ * Suggested future shape:
+ *   - uploadVideo(file): POST to /api/uploads -> returns cloud URL
+ *   - renderVertical(projectId, settings): POST to /api/render
+ *        backend runs FFmpeg / Shotstack pipeline:
+ *          1. crop input 16:9 to 9:16 at configured x-offset + zoom
+ *          2. optionally generate blurred background layer
+ *          3. overlay top title + bottom subtitle with chosen colors
+ *          4. encode 1080x1920 H.264 MP4
+ *   - getExport(id), listExports()
+ */
+
+export type FramingMode = "left" | "center" | "right";
+
+export interface EditorSettings {
+  framing: FramingMode;
+  zoom: number; // 1 - 2
+  blurredBackground: boolean;
+  titleText: string;
+  subtitleText: string;
+  textColor: string;
+  labelBgColor: string;
+}
+
+export interface VideoProject {
+  id: string;
+  name: string;
+  thumbnail: string;
+  sourceSrc: string;
+  createdAt: string;
+  settings: EditorSettings;
+}
+
+export interface ExportRecord {
+  id: string;
+  projectId: string;
+  projectName: string;
+  thumbnail: string;
+  createdAt: string;
+  resolution: string;
+  status: "completed" | "processing" | "failed";
+  downloadUrl: string;
+}
+
+const PROJECTS_KEY = "vc_projects";
+const EXPORTS_KEY = "vc_exports";
+
+export const defaultSettings = (): EditorSettings => ({
+  framing: "center",
+  zoom: 1,
+  blurredBackground: true,
+  titleText: "Titular aquí",
+  subtitleText: "Subtítulo inferior",
+  textColor: "#FFFFFF",
+  labelBgColor: "#FF5A36",
+});
+
+const read = <T,>(key: string): T[] => {
+  try {
+    return JSON.parse(localStorage.getItem(key) || "[]") as T[];
+  } catch {
+    return [];
+  }
+};
+const write = <T,>(key: string, data: T[]) =>
+  localStorage.setItem(key, JSON.stringify(data));
+
+export const videoService = {
+  listProjects(): VideoProject[] {
+    return read<VideoProject>(PROJECTS_KEY);
+  },
+  getProject(id: string): VideoProject | undefined {
+    return read<VideoProject>(PROJECTS_KEY).find((p) => p.id === id);
+  },
+  createProject(
+    data: Omit<VideoProject, "id" | "createdAt" | "settings">,
+  ): VideoProject {
+    const project: VideoProject = {
+      ...data,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      settings: defaultSettings(),
+    };
+    const all = read<VideoProject>(PROJECTS_KEY);
+    all.unshift(project);
+    write(PROJECTS_KEY, all);
+    return project;
+  },
+  updateProject(id: string, patch: Partial<VideoProject>): void {
+    const all = read<VideoProject>(PROJECTS_KEY).map((p) =>
+      p.id === id ? { ...p, ...patch } : p,
+    );
+    write(PROJECTS_KEY, all);
+  },
+  deleteProject(id: string): void {
+    write(
+      PROJECTS_KEY,
+      read<VideoProject>(PROJECTS_KEY).filter((p) => p.id !== id),
+    );
+  },
+
+  listExports(): ExportRecord[] {
+    return read<ExportRecord>(EXPORTS_KEY);
+  },
+  /**
+   * Mock render. Replace this with a real backend call.
+   * Example (Shotstack):
+   *   await fetch('/api/render', { method: 'POST',
+   *     body: JSON.stringify(buildShotstackJson(project)) })
+   */
+  async exportProject(project: VideoProject): Promise<ExportRecord> {
+    await new Promise((r) => setTimeout(r, 1200));
+    const record: ExportRecord = {
+      id: crypto.randomUUID(),
+      projectId: project.id,
+      projectName: project.name,
+      thumbnail: project.thumbnail,
+      createdAt: new Date().toISOString(),
+      resolution: "1080x1920",
+      status: "completed",
+      downloadUrl: project.sourceSrc, // placeholder
+    };
+    const all = read<ExportRecord>(EXPORTS_KEY);
+    all.unshift(record);
+    write(EXPORTS_KEY, all);
+    return record;
+  },
+};
