@@ -19,10 +19,24 @@
 
 export type FramingMode = "left" | "center" | "right";
 
+/**
+ * Display mode for fitting the 16:9 source into the 9:16 canvas.
+ * - "fit": full video visible, letterboxed (contain)
+ * - "fill": cover, crops sides based on framing
+ * - "blur": full video in front + blurred enlarged copy behind
+ * - "manual": user-controlled zoom + offsets
+ *
+ * The backend renderer (FFmpeg / Shotstack / Cloudinary) must honor
+ * this field when producing the 1080x1920 export.
+ */
+export type DisplayMode = "fit" | "fill" | "blur" | "manual";
+
 export interface EditorSettings {
+  displayMode: DisplayMode;
   framing: FramingMode;
-  zoom: number; // 1 - 2
-  blurredBackground: boolean;
+  zoom: number; // 1 - 3 (used in fill/manual/blur)
+  offsetY: number; // -50..50 (manual only)
+  blurredBackground: boolean; // legacy; kept for back-compat, derived from displayMode
   titleText: string;
   subtitleText: string;
   textColor: string;
@@ -53,8 +67,10 @@ const PROJECTS_KEY = "vc_projects";
 const EXPORTS_KEY = "vc_exports";
 
 export const defaultSettings = (): EditorSettings => ({
+  displayMode: "blur",
   framing: "center",
   zoom: 1,
+  offsetY: 0,
   blurredBackground: true,
   titleText: "Titular aquí",
   subtitleText: "Subtítulo inferior",
@@ -111,12 +127,25 @@ export const videoService = {
   },
   /**
    * Mock render. Replace this with a real backend call.
+   *
+   * IMPORTANT: the chosen `settings.displayMode` MUST be honored by the
+   * renderer so that exports match the editor preview.
+   *
+   *  - "fit":    ffmpeg -vf "scale=1080:-2,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black"
+   *  - "fill":   ffmpeg -vf "scale=-2:1920,crop=1080:1920:<x>:0"   (x from framing)
+   *              with extra scale multiplier for `zoom`
+   *  - "blur":   two layers — blurred enlarged background + scaled foreground
+   *              (overlay + boxblur filter)
+   *  - "manual": apply `zoom` + `offsetY` as crop offsets in a 1080x1920 canvas
+   *
    * Example (Shotstack):
    *   await fetch('/api/render', { method: 'POST',
    *     body: JSON.stringify(buildShotstackJson(project)) })
    */
   async exportProject(project: VideoProject): Promise<ExportRecord> {
     await new Promise((r) => setTimeout(r, 1200));
+    // Snapshot the display mode into the record so history reflects how
+    // the export was produced, and so a future backend job can re-render.
     const record: ExportRecord = {
       id: crypto.randomUUID(),
       projectId: project.id,
